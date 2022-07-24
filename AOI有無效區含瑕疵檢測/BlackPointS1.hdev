@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="20.11.2.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>*关闭当前窗口</c>
+<l>*dev_close_window ()</l>
+<l>count_seconds(StartTime)</l>
+<l>*read_image (Image, 'D:/岳揚/照片/0308_Test用/20220308_001_0020(清楚)/DefectImage/2-32.jpg')</l>
+<l>read_image (Image, 'D:/岳揚/照片/0308_Test用/20220308_001_0020(清楚)/DefectImage/2-25.jpg')</l>
+<l>get_image_size (Image, Width, Height)</l>
+<l>dev_close_window ()</l>
+<l>dev_open_window (0, 0, Width/4, Height/2, 'black', WindowHandle)</l>
+<l>dev_display(Image)</l>
+<l>dev_set_line_width (4)</l>
+<c></c>
+<c>//法三</c>
+<l>scale_image_max(Image, ImageScaleMax)</l>
+<l>sobel_amp(ImageScaleMax, EdgeAmplitude, 'sum_abs', 3.5)</l>
+<l>*threshold (EdgeAmplitude, Regions, 20, 101)</l>
+<c></c>
+<l>threshold (EdgeAmplitude, Regions, 14, 101)</l>
+<l>closing_circle(Regions, RegionClosing, 3.5)</l>
+<l>opening_circle(RegionClosing, RegionOpening, 3)</l>
+<l>connection(RegionOpening, ConnectedRegions3)</l>
+<l>*closing_circle(RegionOpening, RegionClosing2, 3.5)</l>
+<l>stop()</l>
+<c></c>
+<l>height_width_ratio(ConnectedRegions3, RegionsHeight, RegionsWidth, RegionsRatio) </l>
+<c>*獲取區域數量</c>
+<l>count_obj(ConnectedRegions3, RegionsNumber)</l>
+<c>*返回最小外接矩形(輸入區域，(矩形左上角座標)，(矩形右下角座標))</c>
+<l>smallest_rectangle1(ConnectedRegions3, Row1, Column1, Row2, Column2)</l>
+<c>*產生最小外接矩形(畫出的區域，(矩形左上角座標)，(矩形右下角座標))</c>
+<l>gen_rectangle1(ConnectedRegions3, Row1, Column1, Row2, Column2)</l>
+<c>*產生區域面積與中座標(畫出的區域，面積，(中心座標))</c>
+<l>area_center(ConnectedRegions3, RegionsArea, RegionsCenterRow, RegionsCenterColumn)</l>
+<l>stop()</l>
+<c></c>
+<l>dev_clear_window()</l>
+<l>dev_display(Image)</l>
+<l>dev_display(RegionOpening)</l>
+<l>stop()</l>
+<c></c>
+<c>//法二(局部二值化)(目前用這個)</c>
+<l>KernelSize:=101</l>
+<l>th:=10</l>
+<l>MinArea := 10</l>
+<l>MaxArea:=8000</l>
+<c></c>
+<l>dev_display(Image)</l>
+<l>mean_image(Image, ImageMean3, KernelSize, KernelSize)</l>
+<l>dyn_threshold(Image, ImageMean3, RegionDynThresh, th, 'light')</l>
+<l>connection(RegionDynThresh, ConnectedRegions2)</l>
+<l>select_shape (ConnectedRegions2, SelectedRegions3, 'area', 'and', 10, 1000)</l>
+<l>closing_circle(SelectedRegions3, SelectedRegions4, 20)</l>
+<l>stop()</l>
+<c></c>
+<l>height_width_ratio(SelectedRegions3, RegionsHeight, RegionsWidth, RegionsRatio) </l>
+<c>*獲取區域數量</c>
+<l>count_obj(SelectedRegions3, RegionsNumber)</l>
+<c>*返回最小外接矩形(輸入區域，(矩形左上角座標)，(矩形右下角座標))</c>
+<l>smallest_rectangle1(SelectedRegions3, Row1, Column1, Row2, Column2)</l>
+<c>*產生最小外接矩形(畫出的區域，(矩形左上角座標)，(矩形右下角座標))</c>
+<l>gen_rectangle1(Rectangle1, Row1, Column1, Row2, Column2)</l>
+<c>*產生區域面積與中座標(畫出的區域，面積，(中心座標))</c>
+<l>area_center(Rectangle1, RegionsArea, RegionsCenterRow, RegionsCenterColumn)</l>
+<c></c>
+<c></c>
+<l>dev_clear_window()</l>
+<l>dev_display(Image)</l>
+<l>dev_display(Rectangle1)</l>
+<l>*dev_display(SelectedRegions3)</l>
+<l>*area_center(SelectedRegions3, Area, Rows, Columns)</l>
+<l>stop()</l>
+<c></c>
+<l>index:=|Rows|</l>
+<l>stop()</l>
+<l>for i := 0 to index - 1 by 1</l>
+<l>    message := '第'+(i+1)+'瑕疵座標爲:'+'('+Rows[i]+Columns[i]+')'</l>
+<l>*     messagex :=  '第'+(i+1)+'瑕疵x座標爲:'+Rows[i]</l>
+<l>*     messagey := '第'+(i+1)+'瑕疵y座標爲:'+Columns[i]</l>
+<l>    disp_message (WindowHandle,message, 'window',0, 0, 'red', 'true')//顯示瑕疵座標</l>
+<l>*     disp_message (WindowHandle,messagex+messagey, 'window',0, 0, 'red', 'true')//顯示瑕疵座標</l>
+<l>endfor</l>
+<c>*計算時間</c>
+<l>count_seconds(EndTime2)</l>
+<l>T2 := '運行時間是：'+(EndTime2-StartTime)+'s'</l>
+<l>*write_string(WindowHandle,'運行時間是：'+T1+'s')</l>
+<l>*disp_message (WindowHandle,T2, 'window',0, 0, 'red', 'true')</l>
+<l>stop()</l>
+<c>//法二結束</c>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

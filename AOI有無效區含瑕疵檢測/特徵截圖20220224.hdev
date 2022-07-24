@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="20.11.2.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>*////////////////Set Parameters////////////////</c>
+<l>Path:='C:/Users/Jason/Desktop/有無效區/Result/'</l>
+<l>Threshold_para:= 10</l>
+<l>Set_Source_Image:=1</l>
+<c>*///case 1:原圖、case 2:增強圖///</c>
+<c></c>
+<c>*///////////讀取檔案pic///////////////////////////////////////////</c>
+<l>read_image (Img, 'C:/Users/Jason/Desktop/有無效區/06/(9).bmp')</l>
+<l>* read_image (Img, 'C:/Users/Jason/Desktop/有無效區/03/(74).jpg')</l>
+<c>*/////////////////////////////////////////////////////////////////</c>
+<c></c>
+<c>*///////////計算區域與長寬/////////////////////////////////////////</c>
+<l>height_width_ratio(Img, Height, Width, Ratio) </l>
+<c>                 *////////512////4096////////</c>
+<l>gen_rectangle1 (Pic_size, 0, 0, Height, Width)</l>
+<c>*/////////////////////////////////////////////////////////////////</c>
+<c>*要想辦法計算平均亮度，讓增益值變成動態的，才能適當涵蓋</c>
+<c>*////////////////Just play////////////////</c>
+<l>intensity(Pic_size, Img, Mean, Deviation)</l>
+<l>if(Mean&lt;20)</l>
+<l>    Brighten := 5</l>
+<l>elseif(Mean&gt;20 and Mean&lt;100)</l>
+<l>    Brighten := 3</l>
+<l>elseif(Mean&gt;100 and Mean&lt;140)</l>
+<l>    Brighten := 0.4</l>
+<l>elseif(Mean&gt;140)</l>
+<l>    Brighten := 0.45    </l>
+<l>endif</l>
+<l>add_image(Img, Img, Image, Brighten, 0)</l>
+<l>* emphasize(Image, ImageEmphasize, Width, Height, 1)</l>
+<l>* threshold (ImageMean2, Region, 0, 100)</l>
+<l>* threshold (ImageMean2, Region, 0, 120)</l>
+<c>*/////////////////////////////////////////////////////////////////</c>
+<c>*///////////圖像增強</c>
+<l>emphasize(Img, ImageEmphasize, Width, Height, 1)</l>
+<c></c>
+<l>mean_image (ImageEmphasize, ImageMean2, 9, 9)</l>
+<c></c>
+<l>threshold (ImageMean2, Region, 0, Threshold_para)</l>
+<c>*/////////////////Source Image//////////////////////////////</c>
+<l>switch (Set_Source_Image)</l>
+<l>  case 1:</l>
+<l>    Source_Pic:=Img</l>
+<l>    break</l>
+<l>  case 2:</l>
+<l>    Source_Pic:=Image</l>
+<l>    break  </l>
+<l>endswitch</l>
+<c>*////////////////Test catch black///////////////////////////</c>
+<c>*/////閉合與填洞</c>
+<l>closing_circle(Region, RegionClosing, 35)</l>
+<l>fill_up(RegionClosing, RegionFillUp)</l>
+<l>connection (RegionFillUp, ConnectedRegions)</l>
+<l>* select_shape (ConnectedRegions, SelectedRegions, 'area', 'and',max(Area), 9999999)</l>
+<l>select_shape (ConnectedRegions, SelectedRegions, 'area', 'and', 65000, 3e+06)</l>
+<l>select_shape (SelectedRegions, SelectedRegion0, 'rectangularity', 'and', 0.4, 1)</l>
+<c>*////////////////Test catch black///////////////////////////</c>
+<c></c>
+<c>*///////////////////////////////////////////////////////////</c>
+<l>height_width_ratio(SelectedRegion0, Height2, Width2, Ratio2)</l>
+<l>region_features(SelectedRegion0, 'row1', row1)</l>
+<l>region_features(SelectedRegion0, 'column1', column1)</l>
+<l>count_obj(SelectedRegion0, Number)</l>
+<c></c>
+<l>* crop_part (Image, ImagePart, row1, column1, Width2, Height2)</l>
+<c></c>
+<c></c>
+<l>if(Number=1)</l>
+<l>  reduce_domain(Source_Pic,SelectedRegion0,Mask)</l>
+<l>  crop_domain(Mask, ImagePart) </l>
+<l>*   gen_rectangle1(PartImg, row1, column1, Height2, Width2) </l>
+<l>  write_image(ImagePart, 'bmp', 0,Path+'Black_0.bmp') </l>
+<c>    *////////////////////////////////////////////////</c>
+<l>    symm_difference (Pic_size, SelectedRegion0, SelectedRegion1)</l>
+<l>    connection (SelectedRegion1, ConnectedRegion1)</l>
+<l>    select_shape (ConnectedRegion1, SelectedRegion2, 'area', 'and', 65000, 3e+06)</l>
+<l>    select_shape (SelectedRegion2, ROI_0, 'rectangularity', 'and', 0.6, 1)</l>
+<l>    count_obj(SelectedRegion2, Selected_Number)</l>
+<l>    area_center(ROI_0, Area_ROI_0, Row_ROI_0, Column_ROI_0)</l>
+<l>    count_obj(ROI_0, ROI_0_Number)</l>
+<l>    if(Area_ROI_0&gt;0 and ROI_0_Number=0)</l>
+<l>       area_center(SelectedRegion0, Area_SelectedRegion0, Row_SelectedRegion0, Column_SelectedRegion0)</l>
+<l>       if(Area_SelectedRegion0&lt;2097000)</l>
+<l>           reduce_domain(Source_Pic,SelectedRegion2,Mask)</l>
+<l>           crop_domain(Mask, ImagePart2) </l>
+<l>           write_image(ImagePart2, 'bmp', 0,Path+'White_00.bmp')</l>
+<l>       endif</l>
+<l>    endif</l>
+<l>    if(Area_ROI_0&gt;0 and ROI_0_Number&lt;2)</l>
+<l>    reduce_domain(Source_Pic,ROI_0,Mask)</l>
+<l>    crop_domain(Mask, ImagePart2)</l>
+<l>    write_image(ImagePart2, 'bmp', 0,Path+'White_0.bmp')         </l>
+<l>    endif</l>
+<l>    if(ROI_0_Number&gt;1)</l>
+<l>    Index:=1  </l>
+<l>    select_obj(ROI_0, ObjectSelected, Index)     </l>
+<l>    reduce_domain(Source_Pic,ObjectSelected,Mask)</l>
+<l>    crop_domain(Mask, ImagePart2)</l>
+<l>    write_image(ImagePart2, 'bmp', 0,Path+'White_01.bmp') </l>
+<l>    select_obj(ROI_0, ObjectSelected, Index+1)     </l>
+<l>    reduce_domain(Source_Pic,ObjectSelected,Mask)</l>
+<l>    crop_domain(Mask, ImagePart2)</l>
+<l>    write_image(ImagePart2, 'bmp', 0,Path+'White_02.bmp')</l>
+<l>      if(ROI_0_Number&gt;2)</l>
+<l>      select_obj(ROI_0, ObjectSelected, Index+2)     </l>
+<l>      reduce_domain(Source_Pic,ObjectSelected,Mask)</l>
+<l>      crop_domain(Mask, ImagePart2)</l>
+<l>      write_image(ImagePart2, 'bmp', 0,Path+'White_03.bmp')     </l>
+<l>      endif</l>
+<l>    endif</l>
+<c>    *////////////////////////////////////////////////</c>
+<l>     return ()</l>
+<l>elseif(Number&gt;1)</l>
+<l>  Index:=1  </l>
+<c>  *//////////////////////////////////////////////</c>
+<l>*   for Index := 0 to |Number1| - 1 by 1  </l>
+<l>*     select_obj(SelectedRegion0, ObjectSelected, Index+1) </l>
+<l>*     write_image(ObjectSelected, 'bmp', 0,'C:/Users/Jason/Desktop/'+Index+2+'.bmp') </l>
+<l>*   endfor </l>
+<c>  *//////////////////////////////////////////////</c>
+<l>  select_obj(SelectedRegion0, ObjectSelected, Index) </l>
+<l>  reduce_domain(Source_Pic,ObjectSelected,Mask)</l>
+<l>  crop_domain(Mask, ImagePart)</l>
+<l>  write_image(ImagePart, 'bmp', 0,Path+'Black_1.bmp') </l>
+<l>  select_obj(SelectedRegion0, ObjectSelected, Index+1) </l>
+<l>  reduce_domain(Source_Pic,ObjectSelected,Mask)</l>
+<l>  crop_domain(Mask, ImagePart)</l>
+<l>  write_image(ImagePart, 'bmp', 0,Path+'Black_2.bmp') </l>
+<c>  *////////////////////////////////////////////// </c>
+<l>endif</l>
+<c></c>
+<c></c>
+<c>*////////////////Test catch white///////////////////////////</c>
+<c>*////與獲取區域的差集</c>
+<l>symm_difference (Pic_size, SelectedRegion0, ROI_0)</l>
+<l>connection(ROI_0, ConnectedRegions1)</l>
+<l>select_shape (ConnectedRegions1, SelectedRegions1, 'area', 'and', 65000, 3e+06)</l>
+<l>select_shape (SelectedRegions1, SelectedRegions2, 'rectangularity', 'and', 0.64, 1)</l>
+<c></c>
+<l>count_obj(SelectedRegions2, Number1)</l>
+<c></c>
+<l>if(Number1=1)</l>
+<l>  reduce_domain(Source_Pic,SelectedRegions2,Mask)</l>
+<l>  crop_domain(Mask, ImagePart2)</l>
+<l>  write_image(ImagePart2, 'bmp', 0,Path+'White_0_0.bmp') </l>
+<l>elseif(Number1&gt;1)</l>
+<l>  reduce_domain(Source_Pic,SelectedRegions2,Mask)</l>
+<l>  crop_domain(Mask, ImagePart2)</l>
+<c>  *//////////////////////////////////////////////</c>
+<l>  index:=1</l>
+<l>  select_obj(SelectedRegions2, ObjectSelected, index)</l>
+<l>  reduce_domain(Source_Pic,ObjectSelected,Mask)</l>
+<l>  crop_domain(Mask, ImagePart2)</l>
+<l>  write_image(ImagePart2, 'bmp', 0,Path+'White_1.bmp') </l>
+<c>  </c>
+<l>  select_obj(SelectedRegions2, ObjectSelected, index+1)</l>
+<l>  reduce_domain(Source_Pic,ObjectSelected,Mask)</l>
+<l>  crop_domain(Mask, ImagePart2)</l>
+<l>  write_image(ImagePart2, 'bmp', 0,Path+'White_2.bmp') </l>
+<c>  *//////////////////////////////////////////////</c>
+<l>elseif(Number1=0)</l>
+<l>endif</l>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

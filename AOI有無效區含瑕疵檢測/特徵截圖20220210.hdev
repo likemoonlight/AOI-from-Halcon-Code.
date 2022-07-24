@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="20.11.2.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>*///////////讀取檔案pic///////////////////////////////////////////</c>
+<c></c>
+<l>* read_image (Img, 'C:/Users/Jason/Desktop/有無效區/2.bmp')</l>
+<l>read_image (Img, 'C:/Users/Jason/Desktop/有無效區/04/(127).jpg')</l>
+<c>*/////////////////////////////////////////////////////////////////</c>
+<c></c>
+<c>*///////////計算區域與長寬/////////////////////////////////////////</c>
+<l>height_width_ratio(Img, Height, Width, Ratio) </l>
+<c>                 *////////512////4096////////</c>
+<l>gen_rectangle1 (Pic_size, 0, 0, Height, Width)</l>
+<c>*/////////////////////////////////////////////////////////////////</c>
+<c>*要想辦法計算平均亮度，讓增益值變成動態的，才能適當涵蓋</c>
+<l>intensity(Pic_size, Img, Mean, Deviation)</l>
+<l>if(Mean&lt;20)</l>
+<l>    Brighten := 5</l>
+<l>elseif(Mean&gt;20 and Mean&lt;100)</l>
+<l>    Brighten := 3</l>
+<l>elseif(Mean&gt;100 and Mean&lt;140)</l>
+<l>    Brighten := 0.5</l>
+<l>elseif(Mean&gt;140)</l>
+<l>    Brighten := 0.45    </l>
+<l>endif</l>
+<c></c>
+<l>add_image(Img, Img, Image, Brighten, 0)</l>
+<l>*add_image(Img, Img, Image, 0.45, 0)</l>
+<l>emphasize(Image, ImageEmphasize, Width, Height, 1)</l>
+<c>*/////////////////////////////////////////////////////////////////</c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<l>*threshold (ImageEmphasize, Region, 0, 20)</l>
+<c></c>
+<l>threshold (Image, Region, 0, 100)</l>
+<c></c>
+<l>height_width_ratio(Region, Height2, Width2, Ratio2)</l>
+<l>region_features(Region, 'row1', row1)</l>
+<l>region_features(Region, 'column1', column1)</l>
+<c></c>
+<l>*crop_part (Image, ImagePart, 0, 2395, 1701, 512)</l>
+<l>crop_part (Image, ImagePart, row1, column1, Width2, Height2)</l>
+<c></c>
+<l>write_image(ImagePart, 'tiff', 0,'C:/Users/Jason/Desktop/3.bmp')</l>
+<l>*crop_part (Image, ImagePart2, 246, 3235, 100, 100)</l>
+<c></c>
+<l>*add_image (ImagePart, ImagePart2, ImageResult1, 1, 0)</l>
+<c></c>
+<c></c>
+<l>*sub_image(ImagePart,ImagePart2, ImageSub, 1, 128)</l>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

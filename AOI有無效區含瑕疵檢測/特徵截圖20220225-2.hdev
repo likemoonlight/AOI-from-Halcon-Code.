@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="20.11.2.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>*////////////////Set Parameters////////////////</c>
+<l>Path:='C:/Users/Jason/Desktop/有無效區/Result/'</l>
+<l>Threshold_para:= 20</l>
+<l>closing_circle_para:=25</l>
+<l>Set_Source_Image:=2</l>
+<c>*///case 1:原圖、case 2:增強圖///</c>
+<c>*///////////////////////////////////////////////</c>
+<c>*///////////Set logistic Parameters//////</c>
+<l>White_in_up := false</l>
+<l>White_in_left := true</l>
+<c>*///////////讀取檔案pic///////////////////////////////////////////</c>
+<l>* read_image (Img, 'C:/Users/Jason/Desktop/有無效區/06/(6).bmp')</l>
+<l>read_image (Img, 'C:/Users/Jason/Desktop/有無效區/04/(120).jpg')</l>
+<c>*/////////////////////////////////////////////////////////////////</c>
+<c>*///////////計算區域與長寬/////////////////////////////////////////</c>
+<l>height_width_ratio(Img, Height, Width, Ratio) </l>
+<c>                 *////////512////4096////////</c>
+<l>gen_rectangle1 (Pic_size, 0, 0, Height, Width)</l>
+<c>*/////////////////////////////////////////////////////////////////</c>
+<c>*////////////////Just play////////////////</c>
+<l>intensity(Pic_size, Img, Mean, Deviation)</l>
+<l>if(Mean&lt;20)</l>
+<l>    Brighten := 5</l>
+<l>elseif(Mean&gt;20 and Mean&lt;100)</l>
+<l>    Brighten := 3</l>
+<l>elseif(Mean&gt;100 and Mean&lt;140)</l>
+<l>    Brighten := 0.4</l>
+<l>elseif(Mean&gt;140)</l>
+<l>    Brighten := 0.45    </l>
+<l>endif</l>
+<l>add_image(Img, Img, Image, Brighten, 0)</l>
+<c>*/////////////////////////////////////////////////////////////////</c>
+<c>*///////////圖像增強</c>
+<l>scale_image_max(Img, ImageScaleMax)</l>
+<l>threshold (ImageScaleMax, Region, 0, Threshold_para)</l>
+<c>*/////////////////Source Image//////////////////////////////</c>
+<l>switch (Set_Source_Image)</l>
+<l>  case 1:</l>
+<l>    Source_Pic:=Img</l>
+<l>    break</l>
+<l>  case 2:</l>
+<l>    Source_Pic:=Image</l>
+<l>    break  </l>
+<l>endswitch</l>
+<c>*////////////////To catch black///////////////////////////</c>
+<c>*/////閉合與填洞</c>
+<l>closing_circle(Region, RegionClosing,closing_circle_para)</l>
+<l>fill_up(RegionClosing, RegionFillUp)</l>
+<l>connection (RegionFillUp, ConnectedRegions)</l>
+<l>select_shape (ConnectedRegions, SelectedRegions, 'area', 'and', 65000, 3e+06)</l>
+<l>select_shape (SelectedRegions, SelectedRegion0, 'rectangularity', 'and', 0.4, 1)</l>
+<c>*///////////////////////////////////////////////////////////</c>
+<l>count_obj(SelectedRegion0, Number)</l>
+<c>  *////////////////////////////////////////////////</c>
+<l>  if(Number&gt;0)</l>
+<l>    for Index := 1 to Number  by 1  </l>
+<l>      select_obj(SelectedRegion0, ObjectSelected, Index) </l>
+<l>      reduce_domain(Source_Pic,ObjectSelected,Mask)</l>
+<l>      crop_domain(Mask, ImagePart)</l>
+<l>      write_image(ImagePart, 'bmp', 0,Path+'Black_'+Index+'.bmp') </l>
+<l>    endfor </l>
+<l>  endif</l>
+<c>*///////////////////////////////////////////////////////////</c>
+<c>*////////////////To catch white///////////////////////////</c>
+<c>*////與獲取區域的差集</c>
+<l>symm_difference (Pic_size, SelectedRegion0, ROI_0)</l>
+<l>connection(ROI_0, ConnectedRegions1)</l>
+<l>select_shape (ConnectedRegions1, SelectedRegion1, 'area', 'and', 65000, 3e+06)</l>
+<l>select_shape (SelectedRegion1, SelectedRegion2, 'rectangularity', 'and', 0.64, 1)</l>
+<c>*///////////////////////////////////////////////////////////</c>
+<l>count_obj(SelectedRegion2, Number1)</l>
+<c>*////////////////////////////////////////////////////////</c>
+<l>  if(Number1&gt;0)</l>
+<l>    for Index := 1 to Number1  by 1  </l>
+<l>      select_obj(SelectedRegion2, ObjectSelected, Index) </l>
+<l>      reduce_domain(Source_Pic,ObjectSelected,Mask)</l>
+<l>      crop_domain(Mask, ImagePart2)</l>
+<l>      write_image(ImagePart2, 'bmp', 0,Path+'White_'+Index+'.bmp') </l>
+<l>    endfor </l>
+<l>  endif</l>
+<c>*////////////////////////////////////////////////////////</c>
+<c></c>
+<c>*//////////////////////////////////////////////////////////////</c>
+<c>*///////////////////Logistic Function////////////////////</c>
+<c> *///////////////////Logistic (1)//////////////////// </c>
+<l>if(Number&gt;0)</l>
+<l>  for Index := 1 to Number  by 1  </l>
+<l>    select_obj(SelectedRegion0, ObjectSelected, Index)</l>
+<l>    area_center(ObjectSelected, Area_Selected, Row_Selected, Column_Selected)</l>
+<c>   */////////////////////////////////////////////////</c>
+<l>    dev_open_window (0, 0, 820, 100, 'white', WindowHandle)</l>
+<l>    dev_display(Image)</l>
+<l>    Col:=Column_Selected/5</l>
+<l>    Row:=Row_Selected/5</l>
+<l>    Dy:=500</l>
+<l>    Text1:='有效區'</l>
+<l>    Text2:='無效區'</l>
+<l>    Text3:='(BM)'</l>
+<l>    Text4:='(VA)'</l>
+<c>    *可通过数组直接设置文本框背景色以及阴影颜色</c>
+<l>    disp_message (WindowHandle, Text1+Text3, 'window', Row, Col, 'black', ['red','#ff11ff'])</l>
+<c>   */////////////////////////////////////////////////</c>
+<l>  endfor </l>
+<l>endif</l>
+<c> *///////////////////Logistic (2)//////////////////// </c>
+<l>if(Number1&gt;0 and Number&lt;1)</l>
+<l>  for Index := 1 to Number1  by 1  </l>
+<l>    select_obj(SelectedRegion2, ObjectSelected, Index)</l>
+<l>    area_center(ObjectSelected, Area_Selected, Row_Selected, Column_Selected)</l>
+<c>   */////////////////////////////////////////////////</c>
+<l>    dev_open_window (0, 0, 820, 100, 'white', WindowHandle)</l>
+<l>    dev_display(Image)</l>
+<l>    Col:=Column_Selected/5</l>
+<l>    Row:=Row_Selected/5</l>
+<l>    Dy:=500</l>
+<l>    Text1:='有效區'</l>
+<l>    Text2:='無效區'</l>
+<l>    Text3:='(BM)'</l>
+<l>    Text4:='(VA)'</l>
+<c>    *可通过数组直接设置文本框背景色以及阴影颜色</c>
+<l>    disp_message (WindowHandle, Text1+Text4, 'window', Row, Col, 'black', ['red','#ff11ff'])</l>
+<c>   */////////////////////////////////////////////////</c>
+<l>  endfor </l>
+<l>endif</l>
+<c> *///////////////////Logistic (3)//////////////////// </c>
+<l>if(Number1&gt;0 and Number=1)</l>
+<l>    White_array[Number1-1]:=0</l>
+<l>  for White_Index := 1 to Number1  by 1  </l>
+<l>    select_obj(SelectedRegion2, ObjectSelected, White_Index)</l>
+<l>    height_width_ratio (ObjectSelected, Height_White, Width_White, Ratio_White)</l>
+<l>    area_center(ObjectSelected, Area_Selected, Row_White, Column_White)</l>
+<c>      </c>
+<l>        select_obj(SelectedRegion0, ObjectSelected, 1)</l>
+<l>        height_width_ratio (ObjectSelected, Height_Black, Width_Black, Ratio_Black)</l>
+<l>        area_center(ObjectSelected, Area_Selected, Row_Black, Column_Black)</l>
+<l>        if(Height_White&gt;500)//left and right</l>
+<l>            if(Column_White&lt;Column_Black and White_in_left)</l>
+<l>              White_array[White_Index-1]:=Number1</l>
+<l>            elseif(Column_White&gt;Column_Black and White_in_left=false)</l>
+<l>              White_array[White_Index-1]:=Number1 </l>
+<l>            endif</l>
+<c>      *///////////////////</c>
+<l>        elseif(Width_White&gt;4000)//up and down</l>
+<l>            if(Row_White&lt;Row_Black and White_in_up)</l>
+<l>              White_array[White_Index-1]:=Number1</l>
+<l>            elseif(Row_White&gt;Row_Black and White_in_up=false)</l>
+<l>              White_array[White_Index-1]:=Number1 </l>
+<l>            endif</l>
+<c>      *///////////////////            </c>
+<l>        elseif(Row_White&gt;Row_Black and Column_White&lt;Column_Black and White_in_up=false and White_in_left)//left and down            </l>
+<l>              White_array[White_Index-1]:=Number1             </l>
+<l>        elseif(Row_White&gt;Row_Black and Column_White&gt;Column_Black and White_in_up=false and White_in_left=false)//right and down             </l>
+<l>              White_array[White_Index-1]:=Number1</l>
+<l>        elseif(Row_White&lt;Row_Black and Column_White&lt;Column_Black and White_in_up and White_in_left)//left and up             </l>
+<l>              White_array[White_Index-1]:=Number1            </l>
+<l>        elseif(Row_White&lt;Row_Black and Column_White&gt;Column_Black and White_in_up and White_in_left=false)//right and up            </l>
+<l>              White_array[White_Index-1]:=Number1            </l>
+<l>        endif       </l>
+<c>   */////////////////////////////////////////////////</c>
+<l>   if(White_array[White_Index-1]&gt;0)</l>
+<l>    dev_open_window (0, 0, 820, 100, 'white', WindowHandle)</l>
+<l>    dev_display(Image)</l>
+<l>    Col:=Column_White/5</l>
+<l>    Row:=Row_White/5</l>
+<l>    Dy:=500</l>
+<l>    Text1:='有效區'</l>
+<l>    Text2:='無效區'</l>
+<l>    Text3:='(BM)'</l>
+<l>    Text4:='(VA)'</l>
+<c>    *可通过数组直接设置文本框背景色以及阴影颜色</c>
+<l>    disp_message (WindowHandle, Text1+Text4, 'window', Row, Col, 'black', ['red','#ff11ff'])</l>
+<l>   endif</l>
+<c>    */////////////////////////////////////////////////</c>
+<l>  endfor </l>
+<l>endif</l>
+<c> *///////////////////Logistic (4)//////////////////// </c>
+<l>* if(Number1&gt;0 and Number&gt;1)</l>
+<l>*     White_array[Number1-1]:=''</l>
+<l>*   for White_Index := 1 to Number1  by 1  </l>
+<l>*     select_obj(SelectedRegion2, ObjectSelected, White_Index)</l>
+<l>*     height_width_ratio (ObjectSelected, Height_White, Width_White, Ratio_White)</l>
+<l>*     area_center(ObjectSelected, Area_Selected, Row_White, Column_White)</l>
+<l>*         select_obj(SelectedRegion0, ObjectSelected, 1)</l>
+<l>*         height_width_ratio (ObjectSelected, Height_Black, Width_Black, Ratio_Black)</l>
+<l>*         area_center(ObjectSelected, Area_Black, Row_Black, Column_Black)</l>
+<c>        *///////////////////</c>
+<l>*         select_obj(SelectedRegion0, ObjectSelected, 2)</l>
+<l>*         height_width_ratio (ObjectSelected, Height_Black2, Width_Black2, Ratio_Black2)</l>
+<l>*         area_center(ObjectSelected, Area_Black2, Row_Black2, Column_Black2)</l>
+<l>*         if()</l>
+<c>        </c>
+<c>        </c>
+<c>        </c>
+<c>        </c>
+<c>        </c>
+<c>        </c>
+<c>        </c>
+<c>          </c>
+<c>          </c>
+<c>          </c>
+<c>      </c>
+<c>    </c>
+<c>    </c>
+<c>    </c>
+<c>    </c>
+<c>    </c>
+<c>    </c>
+<c>    </c>
+<c>    </c>
+<c>    </c>
+<c>    </c>
+<c>   */////////////////////////////////////////////////</c>
+<l>*     dev_open_window (0, 0, 820, 100, 'white', WindowHandle)</l>
+<l>*     dev_display(Image)</l>
+<l>*     Col:=Column_Selected/5</l>
+<l>*     Row:=Row_Selected/5</l>
+<l>*     Dy:=500</l>
+<l>*     Text1:='有效區'</l>
+<l>*     Text2:='無效區'</l>
+<l>*     Text3:='(BM)'</l>
+<l>*     Text4:='(VA)'</l>
+<c>    *可通过数组直接设置文本框背景色以及阴影颜色</c>
+<l>*     disp_message (WindowHandle, Text1+Text4, 'window', Row, Col, 'black', ['red','#ff11ff'])</l>
+<c>   */////////////////////////////////////////////////</c>
+<l>*   endfor </l>
+<l>* endif</l>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
